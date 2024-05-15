@@ -73,6 +73,9 @@ public class PlayerService extends Service {
         mediaSession.setMediaButtonReceiver(
                 PendingIntent.getBroadcast(appContext, 0, mediaButtonIntent, PendingIntent.FLAG_IMMUTABLE));
 
+        Intent broadcastIntent = new Intent("com.example.mp3player.LOAD_COMPLETE");
+        sendBroadcast(broadcastIntent);
+
     }
 
     @Override
@@ -92,8 +95,13 @@ public class PlayerService extends Service {
                     .putString(MediaMetadataCompat.METADATA_KEY_ALBUM, track.getArtist())
                     .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, track.getArtist())
                     .putLong(MediaMetadataCompat.METADATA_KEY_DURATION, track.getDuration())
+                    .putString(MediaMetadataCompat.METADATA_KEY_WRITER, musicRepository.toJson())
                     .build();
             mediaSession.setMetadata(metadata);
+
+            mediaSession.setPlaybackState(
+                    stateBuilder.setState(PlaybackStateCompat.STATE_CONNECTING,
+                            PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN, 1).build());
 
             mediaSession.setPlaybackState(
                     stateBuilder.setState(PlaybackStateCompat.STATE_SKIPPING_TO_PREVIOUS,
@@ -262,6 +270,41 @@ public class PlayerService extends Service {
 
 
         }
+        @Override
+        public void onSkipToQueueItem(long id) {
+            exoPlayer.setPlayWhenReady(false);
+            mediaSession.setActive(false);
+
+            currentTimeMillis = 0;
+
+            MusicRepository.Track track = musicRepository.getByPosition(id);
+
+            MediaMetadataCompat metadata = metadataBuilder
+                    .putBitmap(MediaMetadataCompat.METADATA_KEY_ART, track.getBitmap())
+                    .putString(MediaMetadataCompat.METADATA_KEY_TITLE, track.getTitle())
+                    .putString(MediaMetadataCompat.METADATA_KEY_ALBUM, track.getArtist())
+                    .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, track.getArtist())
+                    .putLong(MediaMetadataCompat.METADATA_KEY_DURATION, track.getDuration())
+                    .build();
+            mediaSession.setMetadata(metadata);
+
+            mediaSession.setPlaybackState(
+                    stateBuilder.setState(PlaybackStateCompat.STATE_SKIPPING_TO_NEXT,
+                            PlaybackState.PLAYBACK_POSITION_UNKNOWN, 1).build());
+
+            refreshNotificationAndForegroundStatus(PlaybackStateCompat.STATE_SKIPPING_TO_NEXT);
+
+            mediaSession.setActive(true);
+
+            exoPlayer.setMediaItem(MediaItem.fromUri(track.getUri()));
+            exoPlayer.prepare();
+
+            exoPlayer.setPlayWhenReady(true);
+
+            mediaSession.setPlaybackState(
+                    stateBuilder.setState(PlaybackStateCompat.STATE_PLAYING,
+                            currentTimeMillis, 1).build());
+        }
 
         @Override
         public void onSeekTo(long pos) {
@@ -396,7 +439,6 @@ public class PlayerService extends Service {
     };
 }
 
-// TODO: панель всех песен (возможно кнопка зацикливания)
+// TODO: (возможно кнопка зацикливания)
 // TODO: интерфейс
 // TODO: не убивать сервис
-// TODO: парсинг изображений ускорить

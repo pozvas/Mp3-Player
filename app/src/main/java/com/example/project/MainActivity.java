@@ -2,7 +2,6 @@ package com.example.project;
 
 
 import android.Manifest;
-import android.annotation.SuppressLint;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
@@ -11,19 +10,27 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
-import android.support.v4.media.MediaDescriptionCompat;
 import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.session.MediaControllerCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.ListView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
-import androidx.core.app.NotificationCompat;
 import androidx.core.content.ContextCompat;
-import androidx.media.session.MediaButtonReceiver;
+import androidx.drawerlayout.widget.DrawerLayout;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
     PlayerService.PlayerServiceBinder playerServiceBinder;
@@ -44,6 +51,9 @@ public class MainActivity extends AppCompatActivity {
     private SeekBar seekBar;
     private TextView played;
     private boolean isSeeking = false;
+    private TrackListAdapter adapter;
+    private ListView trackList;
+    private DrawerLayout drawerLayout;
     private final ServiceConnection serviceConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
@@ -59,6 +69,8 @@ public class MainActivity extends AppCompatActivity {
                             if (state.getState() == PlaybackStateCompat.STATE_SKIPPING_TO_PREVIOUS ||
                                     state.getState() == PlaybackStateCompat.STATE_SKIPPING_TO_NEXT) {
                                 ChangeTrackData();
+                            } else if(state.getState() == PlaybackStateCompat.STATE_CONNECTING){
+                                SetTracks();
                             } else {
                                 boolean playing =
                                         state.getState() == PlaybackStateCompat.STATE_PLAYING;
@@ -85,6 +97,18 @@ public class MainActivity extends AppCompatActivity {
             mediaController = null;
         }
     };
+
+    private void SetTracks() {
+        adapter = new TrackListAdapter(this, fromJson((String) mediaController.getMetadata().getText(MediaMetadataCompat.METADATA_KEY_WRITER)));
+        trackList.setAdapter(adapter);
+        trackList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                mediaController.getTransportControls().skipToQueueItem(position);
+                drawerLayout.close();
+            }
+        });
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -114,6 +138,13 @@ public class MainActivity extends AppCompatActivity {
         previousButton = findViewById(R.id.btn_prev);
         seekBar = findViewById(R.id.seek_bar);
         played = findViewById(R.id.song_played);
+
+        drawerLayout = findViewById(R.id.drawer_layout);
+        Button test = findViewById(R.id.showAllSongs);
+        test.setOnClickListener((v -> {
+            drawerLayout.open();
+        }));
+        trackList = findViewById(R.id.track_list);
 
 
         startService(new Intent(this, PlayerService.class));
@@ -204,6 +235,23 @@ public class MainActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         unbindService(serviceConnection);
+    }
+
+    private ArrayList<MusicRepository.Track> fromJson(String json) {
+        ArrayList<MusicRepository.Track> tracks = new ArrayList<>();
+        JSONArray jsonArray = null;
+        try {
+            jsonArray = new JSONArray(json);
+            for (int i = 0; i < jsonArray.length(); i++) {
+                JSONObject jsonObject = jsonArray.getJSONObject(i);
+                MusicRepository.Track person = MusicRepository.Track.fromJson(jsonObject);
+                tracks.add(person);
+            }
+        } catch (JSONException e) {
+            throw new RuntimeException(e);
+        }
+        return tracks;
+
     }
 
 }

@@ -15,6 +15,12 @@ import android.os.Looper;
 import android.os.Message;
 import android.provider.MediaStore;
 
+import androidx.annotation.NonNull;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -44,7 +50,7 @@ final class MusicRepository {
 
                 Bitmap art = BitmapFactory.decodeResource(context.getResources(), R.drawable.default_album_cover);
 
-                MediaMetadataRetriever metaRetriever = new MediaMetadataRetriever();
+               MediaMetadataRetriever metaRetriever = new MediaMetadataRetriever();
                 metaRetriever.setDataSource(context, Uri.parse(data));
                 byte[] cover = metaRetriever.getEmbeddedPicture();
                 if (cover != null) {
@@ -67,6 +73,11 @@ final class MusicRepository {
         return getCurrent();
     }
 
+    Track getByPosition(long pos) {
+        currentItemIndex = (int) (pos % data.size());
+        return getCurrent();
+    }
+
     Track getPrevious() {
         if (currentItemIndex == 0)
             currentItemIndex = data.size() - 1;
@@ -77,6 +88,16 @@ final class MusicRepository {
 
     Track getCurrent() {
         return data.get(currentItemIndex);
+    }
+
+    public String toJson() {
+        JSONArray tracksArray = new JSONArray();
+        for (Track track : data){
+            tracksArray.put(track.toJson());
+        }
+
+        return tracksArray.toString();
+
     }
 
     static class Track {
@@ -116,6 +137,34 @@ final class MusicRepository {
 
         Long getDuration() {
             return duration;
+        }
+
+        public JSONObject toJson() {
+            try {
+                JSONObject jsonObject = new JSONObject();
+
+                jsonObject.put("title", this.title);
+                jsonObject.put("artist", this.artist);
+                jsonObject.put("duration", this.duration);
+
+                return jsonObject;
+
+            } catch (JSONException e) {
+                e.printStackTrace();
+                return null;
+            }
+        }
+        public static Track fromJson(JSONObject jsonObject) {
+            try {
+                String title = jsonObject.getString("title");
+                String artist = jsonObject.getString("artist");
+                long duration = jsonObject.getLong("duration");
+
+                return new Track(title, artist, null, null, duration);
+            } catch (JSONException e) {
+                e.printStackTrace();
+                return null;
+            }
         }
     }
 }
