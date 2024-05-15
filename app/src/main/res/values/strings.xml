@@ -5,6 +5,10 @@
     <string name="pause">Pause</string>
     <string name="play">Play</string>
     <string name="next">Next</string>
+    <string name="starting">The application is being launched</string>
+
+
+
     <string name="title_activity_main2">MainActivity2</string>
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>

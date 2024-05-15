@@ -2,6 +2,8 @@ package com.example.project;
 
 import android.annotation.SuppressLint;
 import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
@@ -14,6 +16,7 @@ import android.graphics.BitmapFactory;
 import android.media.AudioManager;
 import android.media.session.PlaybackState;
 import android.os.Binder;
+import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.support.v4.media.MediaMetadataCompat;
@@ -48,10 +51,27 @@ public class PlayerService extends Service {
     private AudioManager audioManager;
     private long currentTimeMillis = 0;
     private boolean isPause = false;
+    private boolean isFirst = true;
 
+    @SuppressLint("ForegroundServiceType")
     @Override
     public void onCreate() {
         super.onCreate();
+        if (Build.VERSION.SDK_INT >= 26) {
+            String CHANNEL_ID = "my_channel_01";
+            NotificationChannel channel = new NotificationChannel(CHANNEL_ID,
+                    "Channel human readable title",
+                    NotificationManager.IMPORTANCE_DEFAULT);
+
+            ((NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE)).createNotificationChannel(channel);
+
+            Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
+                    .setContentTitle("")
+                    .setContentText("").build();
+
+            startForeground(1, notification);
+            stopForeground(STOP_FOREGROUND_REMOVE);
+        }
 
         audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
 
@@ -75,6 +95,8 @@ public class PlayerService extends Service {
 
         Intent broadcastIntent = new Intent("com.example.mp3player.LOAD_COMPLETE");
         sendBroadcast(broadcastIntent);
+
+        //startService(new Intent(getApplicationContext(), PlayerService.class));
 
     }
 
@@ -106,11 +128,13 @@ public class PlayerService extends Service {
             mediaSession.setPlaybackState(
                     stateBuilder.setState(PlaybackStateCompat.STATE_SKIPPING_TO_PREVIOUS,
                             PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN, 1).build());
+
+            refreshNotificationAndForegroundStatus(PlaybackStateCompat.STATE_PAUSED);
         }
         @Override
         public void onPlay() {
             if (!isPause) {
-                startService(new Intent(getApplicationContext(), PlayerService.class));
+
                 MusicRepository.Track track = musicRepository.getCurrent();
 
                 MediaMetadataCompat metadata = metadataBuilder
@@ -159,8 +183,8 @@ public class PlayerService extends Service {
 
             refreshNotificationAndForegroundStatus(PlaybackStateCompat.STATE_PLAYING);
 
-        }
 
+        }
         @Override
         public void onPause() {
             exoPlayer.setPlayWhenReady(false);
@@ -178,7 +202,6 @@ public class PlayerService extends Service {
 
             refreshNotificationAndForegroundStatus(PlaybackStateCompat.STATE_PAUSED);
         }
-
         @Override
         public void onStop() {
             exoPlayer.setPlayWhenReady(false);
@@ -305,7 +328,6 @@ public class PlayerService extends Service {
                     stateBuilder.setState(PlaybackStateCompat.STATE_PLAYING,
                             currentTimeMillis, 1).build());
         }
-
         @Override
         public void onSeekTo(long pos) {
             currentTimeMillis = pos;
@@ -327,6 +349,7 @@ public class PlayerService extends Service {
         }
     }
 
+    @SuppressLint("ForegroundServiceType")
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         MediaButtonReceiver.handleIntent(mediaSession, intent);
@@ -350,11 +373,12 @@ public class PlayerService extends Service {
 
     @SuppressLint("ForegroundServiceType")
     void refreshNotificationAndForegroundStatus(int playbackState) {
+
         switch (playbackState) {
-            case PlaybackStateCompat.STATE_PLAYING: {
+            case PlaybackStateCompat.STATE_CONNECTING:{
                 startForeground(NOTIFICATION_ID, getNotification(playbackState));
-                break;
             }
+            case PlaybackStateCompat.STATE_PLAYING:
             case PlaybackStateCompat.STATE_PAUSED:
             case PlaybackStateCompat.STATE_SKIPPING_TO_NEXT:
             case PlaybackStateCompat.STATE_SKIPPING_TO_PREVIOUS: {
@@ -363,7 +387,7 @@ public class PlayerService extends Service {
                 }
                 NotificationManagerCompat.from(PlayerService.this)
                         .notify(NOTIFICATION_ID, getNotification(playbackState));
-                stopForeground(false);
+                //stopForeground(false);
                 break;
             }
             default: {

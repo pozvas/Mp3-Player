@@ -1,5 +1,7 @@
 package com.example.project;
 
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
@@ -13,6 +15,7 @@ import androidx.media.session.MediaButtonReceiver;
 
 public class MediaStyleHelper {
     private static final String CHANNEL_ID = "player_channel";
+    private static final String FIRST_CHANNEL = "first_channel";
     public static NotificationCompat.Builder from(
             Context context, MediaSessionCompat mediaSession) {
         MediaControllerCompat controller = mediaSession.getController();
@@ -35,4 +38,5 @@ public class MediaStyleHelper {
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC);
         return builder;
     }
+
 }

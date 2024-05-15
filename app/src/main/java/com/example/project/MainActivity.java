@@ -2,8 +2,11 @@ package com.example.project;
 
 
 import android.Manifest;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.os.Build;
@@ -16,6 +19,7 @@ import android.support.v4.media.session.PlaybackStateCompat;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.SeekBar;
@@ -44,8 +48,6 @@ public class MainActivity extends AppCompatActivity {
         }
     };
     private ImageView playButton;
-    private ImageView pauseButton;
-    private ImageView stopButton;
     private ImageView nextButton;
     private ImageView previousButton;
     private SeekBar seekBar;
@@ -54,6 +56,7 @@ public class MainActivity extends AppCompatActivity {
     private TrackListAdapter adapter;
     private ListView trackList;
     private DrawerLayout drawerLayout;
+    private boolean isPlaying = false;
     private final ServiceConnection serviceConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
@@ -72,17 +75,16 @@ public class MainActivity extends AppCompatActivity {
                             } else if(state.getState() == PlaybackStateCompat.STATE_CONNECTING){
                                 SetTracks();
                             } else {
-                                boolean playing =
+                                isPlaying =
                                         state.getState() == PlaybackStateCompat.STATE_PLAYING;
-                                if (playing){
+                                if (isPlaying){
                                     customHandler.postDelayed(updatePlayedThread, 0);
+                                    playButton.setImageResource(R.drawable.ic_pause);
                                 }
                                 else {
                                     customHandler.removeCallbacks(updatePlayedThread);
+                                    playButton.setImageResource(R.drawable.ic_play);
                                 }
-                                playButton.setEnabled(!playing);
-                                pauseButton.setEnabled(playing);
-                                stopButton.setEnabled(playing);
                             }
                         }
                     }
@@ -115,55 +117,34 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_MEDIA_AUDIO}, 1);
-            }
-        }
-        else {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 1);
-            }
-        }
-
-        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.POST_NOTIFICATIONS}, 2);
-            return;
-        }
-
         playButton = findViewById(R.id.btn_play);
-        pauseButton = findViewById(R.id.btn_pause);
-        stopButton = findViewById(R.id.btn_stop);
         nextButton = findViewById(R.id.btn_next);
         previousButton = findViewById(R.id.btn_prev);
         seekBar = findViewById(R.id.seek_bar);
         played = findViewById(R.id.song_played);
 
         drawerLayout = findViewById(R.id.drawer_layout);
-        Button test = findViewById(R.id.showAllSongs);
+        drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);
+        ImageButton test = findViewById(R.id.showAllSongs);
         test.setOnClickListener((v -> {
             drawerLayout.open();
         }));
         trackList = findViewById(R.id.track_list);
 
 
-        startService(new Intent(this, PlayerService.class));
+        //startService(new Intent(this, PlayerService.class));
         bindService(new Intent(this, PlayerService.class), serviceConnection, BIND_AUTO_CREATE);
 
-
         playButton.setOnClickListener((v -> {
-            if (mediaController != null)
-                mediaController.getTransportControls().play();
-        }));
-
-        pauseButton.setOnClickListener((v -> {
-            if (mediaController != null)
-                mediaController.getTransportControls().pause();
-        }));
-
-        stopButton.setOnClickListener((v -> {
-            if (mediaController != null)
-                mediaController.getTransportControls().stop();
+            if(!isPlaying) {
+                if (mediaController != null)
+                    mediaController.getTransportControls().play();
+                isPlaying = true;
+            } else {
+                if (mediaController != null)
+                    mediaController.getTransportControls().pause();
+                isPlaying = false;
+            }
         }));
 
         nextButton.setOnClickListener((v -> {

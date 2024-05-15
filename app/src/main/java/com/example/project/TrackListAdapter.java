@@ -14,7 +14,6 @@ public class TrackListAdapter extends BaseAdapter {
 
     private Context context;
     private ArrayList<MusicRepository.Track> tracks;
-    private int selectedColor = Color.BLACK;
     private TextView textView;
 
     public TrackListAdapter(Context context, ArrayList<MusicRepository.Track> tracks) {
@@ -45,7 +44,8 @@ public class TrackListAdapter extends BaseAdapter {
         }
 
         textView = convertView.findViewById(R.id.textView);
-        textView.setText("Элемент " + tracks.get(position).getTitle());
+        textView.setText(tracks.get(position).getArtist() + " - " + tracks.get(position).getTitle());
+        textView.setTextColor(Color.BLACK);
         convertView.setBackgroundColor(position % 2 == 0 ? 0xFFE0E0E0 : 0xFFFFFFFF);
         return convertView;
     }
