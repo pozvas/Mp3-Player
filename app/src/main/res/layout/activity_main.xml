@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!-- Верхний контейнер с информацией о песне -->
+    <LinearLayout
+        android:id="@+id/song_info_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Изображение обложки альбома -->
+        <ImageView
+            android:id="@+id/album_cover"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:src="@drawable/default_album_cover"
+            android:scaleType="centerCrop"/>
+
+        <!-- Заголовок песни -->
+        <TextView
+            android:id="@+id/song_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Название песни"
+            android:textSize="18sp"
+            android:textColor="@android:color/black"
+            android:layout_marginTop="8dp"/>
+
+        <!-- Исполнитель -->
+        <TextView
+            android:id="@+id/artist_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Исполнитель"
+            android:textSize="14sp"
+            android:textColor="@android:color/darker_gray"
+            android:layout_marginTop="4dp"/>
+    </LinearLayout>
+
+    <!-- Контейнер для элементов управления музыкой -->
+
+    <!-- Прогрессбар для отображения прогресса проигрывания -->
+
+    <LinearLayout
+        android:id="@+id/music_controls_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/relativeLayout"
+        android:layout_marginTop="1dp"
+        android:orientation="horizontal"
+        android:padding="16dp">
+        <!-- Кнопка "Previous" -->
+        <ImageButton
+            android:id="@+id/btn_prev"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@null"
+            android:contentDescription="Stop"
+            android:src="@drawable/ic_prev" />
+
+        <!-- Кнопка "Play" -->
+        <ImageButton
+            android:id="@+id/btn_play"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@null"
+            android:contentDescription="Play"
+            android:src="@drawable/ic_play" />
+
+        <!-- Кнопка "Pause" -->
+        <ImageButton
+            android:id="@+id/btn_pause"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@null"
+            android:contentDescription="Pause"
+            android:src="@drawable/ic_pause" />
+
+        <!-- Кнопка "Stop" -->
+        <ImageButton
+            android:id="@+id/btn_stop"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@null"
+            android:contentDescription="Stop"
+            android:src="@drawable/ic_stop" />
+
+        <!-- Кнопка "Next" -->
+        <ImageButton
+            android:id="@+id/btn_next"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@null"
+            android:contentDescription="Stop"
+            android:src="@drawable/ic_next" />
+    </LinearLayout>
+
+    <RelativeLayout
+        android:id="@+id/relativeLayout"
+        android:layout_width="match_parent"
+        android:layout_height="92dp"
+        android:layout_below="@+id/song_info_container"
+        android:layout_marginTop="4dp">
+
+        <SeekBar
+            android:id="@+id/seek_bar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="3dp"
+            android:padding="16dp"
+            android:thumb="@drawable/ic_seek_thumb" />
+
+        <!-- Длительность песни -->
+        <TextView
+            android:id="@+id/song_duration"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/seek_bar"
+            android:layout_alignParentEnd="true"
+            android:layout_marginTop="-1dp"
+            android:layout_marginEnd="12dp"
+            android:text="0:00"
+            android:textColor="@android:color/darker_gray"
+            android:textSize="14sp" />
+
+        <!-- Текущая длительность песни -->
+        <TextView
+            android:id="@+id/song_played"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/seek_bar"
+            android:layout_alignParentStart="true"
+            android:layout_marginStart="7dp"
+            android:layout_marginTop="-1dp"
+            android:text="0:00"
+            android:textColor="@android:color/darker_gray"
+            android:textSize="14sp" />
+
+    </RelativeLayout>
+
+    <Button
+        android:id="@+id/showAllSongs"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/music_controls_container"
+        android:layout_marginTop="50dp"
+        android:text="Button" />
+
+
+</RelativeLayout>
