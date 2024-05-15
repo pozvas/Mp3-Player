@@ -71,6 +71,8 @@ public class MainActivity extends AppCompatActivity {
                                 return;
                             if (state.getState() == PlaybackStateCompat.STATE_SKIPPING_TO_PREVIOUS ||
                                     state.getState() == PlaybackStateCompat.STATE_SKIPPING_TO_NEXT) {
+                                played.setText("00:00");
+                                seekBar.setProgress(0);
                                 ChangeTrackData();
                             } else if(state.getState() == PlaybackStateCompat.STATE_CONNECTING){
                                 SetTracks();

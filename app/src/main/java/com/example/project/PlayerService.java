@@ -50,8 +50,8 @@ public class PlayerService extends Service {
     private ExoPlayer exoPlayer;
     private AudioManager audioManager;
     private long currentTimeMillis = 0;
-    private boolean isPause = false;
-    private boolean isFirst = true;
+    private boolean isPause = true;
+    private boolean isNewTrack = true;
 
     @SuppressLint("ForegroundServiceType")
     @Override
@@ -121,6 +121,17 @@ public class PlayerService extends Service {
                     .build();
             mediaSession.setMetadata(metadata);
 
+            exoPlayer.setMediaItem(MediaItem.fromUri(track.getUri()));
+            exoPlayer.addListener(new Player.Listener() {
+                @Override
+                public void onPlaybackStateChanged(int playbackState) {
+                    Player.Listener.super.onPlaybackStateChanged(playbackState);
+                    if (playbackState == 4) {
+                        onSkipToNext();
+                    }
+                }
+            });
+
             mediaSession.setPlaybackState(
                     stateBuilder.setState(PlaybackStateCompat.STATE_CONNECTING,
                             PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN, 1).build());
@@ -133,7 +144,7 @@ public class PlayerService extends Service {
         }
         @Override
         public void onPlay() {
-            if (!isPause) {
+            if (!isPause || isNewTrack) {
 
                 MusicRepository.Track track = musicRepository.getCurrent();
 
@@ -153,33 +164,22 @@ public class PlayerService extends Service {
                 if (audioFocusResult != AudioManager.AUDIOFOCUS_REQUEST_GRANTED)
                     return;
 
-                mediaSession.setActive(true);
-
                 exoPlayer.setMediaItem(MediaItem.fromUri(track.getUri()));
-                exoPlayer.addListener(new Player.Listener() {
-                    @Override
-                    public void onPlaybackStateChanged(int playbackState) {
-                        Player.Listener.super.onPlaybackStateChanged(playbackState);
-                        if (playbackState == 4) {
-                            onSkipToNext();
-                        }
-                    }
-                });
+
                 exoPlayer.prepare();
-                isPause = false;
-
-
+                isNewTrack = false;
             }
-
+            isPause = false;
+            mediaSession.setActive(true);
             exoPlayer.setPlayWhenReady(true);
 
             mediaSession.setPlaybackState(
                     stateBuilder.setState(PlaybackStateCompat.STATE_PLAYING,
                             currentTimeMillis, 1).build());
 
-            /*registerReceiver(
+            registerReceiver(
                     becomingNoisyReceiver,
-                    new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY));*/
+                    new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY));
 
             refreshNotificationAndForegroundStatus(PlaybackStateCompat.STATE_PLAYING);
 
@@ -198,7 +198,7 @@ public class PlayerService extends Service {
                     stateBuilder.setState(PlaybackStateCompat.STATE_PAUSED,
                             currentTimeMillis, 1).build());
 
-            //unregisterReceiver(becomingNoisyReceiver);
+            unregisterReceiver(becomingNoisyReceiver);
 
             refreshNotificationAndForegroundStatus(PlaybackStateCompat.STATE_PAUSED);
         }
@@ -244,16 +244,21 @@ public class PlayerService extends Service {
 
             refreshNotificationAndForegroundStatus(PlaybackStateCompat.STATE_SKIPPING_TO_NEXT);
 
-            mediaSession.setActive(true);
-
             exoPlayer.setMediaItem(MediaItem.fromUri(track.getUri()));
-            exoPlayer.prepare();
-
-            exoPlayer.setPlayWhenReady(true);
-
-            mediaSession.setPlaybackState(
-                    stateBuilder.setState(PlaybackStateCompat.STATE_PLAYING,
-                            currentTimeMillis, 1).build());
+            isNewTrack = true;
+            if (isPause){
+                mediaSession.setPlaybackState(
+                        stateBuilder.setState(PlaybackStateCompat.STATE_PAUSED,
+                                currentTimeMillis, 1).build());
+            }
+            else {
+                mediaSession.setActive(true);
+                exoPlayer.prepare();
+                exoPlayer.setPlayWhenReady(true);
+                mediaSession.setPlaybackState(
+                        stateBuilder.setState(PlaybackStateCompat.STATE_PLAYING,
+                                currentTimeMillis, 1).build());
+            }
         }
         @Override
         public void onSkipToPrevious(){
@@ -280,18 +285,21 @@ public class PlayerService extends Service {
 
             refreshNotificationAndForegroundStatus(PlaybackStateCompat.STATE_SKIPPING_TO_PREVIOUS);
 
-            mediaSession.setActive(true);
-
             exoPlayer.setMediaItem(MediaItem.fromUri(track.getUri()));
-            exoPlayer.prepare();
-
-            exoPlayer.setPlayWhenReady(true);
-
-            mediaSession.setPlaybackState(
-                    stateBuilder.setState(PlaybackStateCompat.STATE_PLAYING,
-                            currentTimeMillis, 1).build());
-
-
+            isNewTrack = true;
+            if (isPause){
+                mediaSession.setPlaybackState(
+                        stateBuilder.setState(PlaybackStateCompat.STATE_PAUSED,
+                                currentTimeMillis, 1).build());
+            }
+            else {
+                mediaSession.setActive(true);
+                exoPlayer.prepare();
+                exoPlayer.setPlayWhenReady(true);
+                mediaSession.setPlaybackState(
+                        stateBuilder.setState(PlaybackStateCompat.STATE_PLAYING,
+                                currentTimeMillis, 1).build());
+            }
         }
         @Override
         public void onSkipToQueueItem(long id) {
@@ -317,24 +325,40 @@ public class PlayerService extends Service {
 
             refreshNotificationAndForegroundStatus(PlaybackStateCompat.STATE_SKIPPING_TO_NEXT);
 
-            mediaSession.setActive(true);
-
             exoPlayer.setMediaItem(MediaItem.fromUri(track.getUri()));
-            exoPlayer.prepare();
-
-            exoPlayer.setPlayWhenReady(true);
-
-            mediaSession.setPlaybackState(
-                    stateBuilder.setState(PlaybackStateCompat.STATE_PLAYING,
-                            currentTimeMillis, 1).build());
+            isNewTrack = true;
+            if (isPause){
+                mediaSession.setPlaybackState(
+                        stateBuilder.setState(PlaybackStateCompat.STATE_PAUSED,
+                                currentTimeMillis, 1).build());
+            }
+            else {
+                mediaSession.setActive(true);
+                exoPlayer.prepare();
+                exoPlayer.setPlayWhenReady(true);
+                mediaSession.setPlaybackState(
+                        stateBuilder.setState(PlaybackStateCompat.STATE_PLAYING,
+                                currentTimeMillis, 1).build());
+            }
         }
         @Override
         public void onSeekTo(long pos) {
             currentTimeMillis = pos;
             exoPlayer.seekTo(pos);
-            mediaSession.setPlaybackState(
-                    stateBuilder.setState(PlaybackStateCompat.STATE_PLAYING,
-                            currentTimeMillis, 1).build());
+            exoPlayer.prepare();
+            isNewTrack = false;
+            if (isPause) {
+                refreshNotificationAndForegroundStatus(PlaybackStateCompat.STATE_PAUSED);
+                mediaSession.setPlaybackState(
+                        stateBuilder.setState(PlaybackStateCompat.STATE_PAUSED,
+                                currentTimeMillis, 1).build());
+            }
+            else {
+                refreshNotificationAndForegroundStatus(PlaybackStateCompat.STATE_PLAYING);
+                mediaSession.setPlaybackState(
+                        stateBuilder.setState(PlaybackStateCompat.STATE_PLAYING,
+                                currentTimeMillis, 1).build());
+            }
         }
     };
 
@@ -407,9 +431,7 @@ public class PlayerService extends Service {
                                 this,
                                 PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS)));
 
-        if (playbackState == PlaybackStateCompat.STATE_PLAYING ||
-            playbackState == PlaybackStateCompat.STATE_SKIPPING_TO_NEXT ||
-                playbackState == PlaybackStateCompat.STATE_SKIPPING_TO_PREVIOUS)
+        if (!isPause)
             builder.addAction(
                     new NotificationCompat.Action(
                             android.R.drawable.ic_media_pause, getString(R.string.pause),
