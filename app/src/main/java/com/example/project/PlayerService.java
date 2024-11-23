@@ -214,7 +214,7 @@ public class PlayerService extends Service {
                     stateBuilder.setState(PlaybackStateCompat.STATE_STOPPED,
                             PlaybackState.PLAYBACK_POSITION_UNKNOWN, 1).build());
 
-            //unregisterReceiver(becomingNoisyReceiver);
+            unregisterReceiver(becomingNoisyReceiver);
 
             refreshNotificationAndForegroundStatus(PlaybackStateCompat.STATE_PAUSED);
 
@@ -485,6 +485,4 @@ public class PlayerService extends Service {
     };
 }
 
-// TODO: (возможно кнопка зацикливания)
-// TODO: интерфейс
-// TODO: не убивать сервис
+
